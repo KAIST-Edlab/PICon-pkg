@@ -188,7 +188,9 @@ env.finalize()
 | **Internal Responsiveness** | Relevance of answers to questions |
 | **Internal Consistency** | Consistency of answers to repeated questions |
 | **Internal Harmonic Mean** | Harmonic mean of Responsiveness and Consistency |
-| **External Wilson Score** | Proportion of verifiable claims confirmed by web search (Wilson CI) |
+| **External Coverage** | Fraction of turns containing at least one verifiable claim (`\|T_c\| / T`) |
+| **External Non-refutation Rate** | Macro-averaged per-turn rate of claims not refuted by web evidence |
+| **External Consistency (EC)** | Harmonic mean of Coverage and Non-refutation Rate |
 | **Inter-session Stability** | Answer stability across sessions |
 | **Intra-session Stability** | Answer stability within a session |
 

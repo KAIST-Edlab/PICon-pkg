@@ -169,7 +169,9 @@ def run(
                     "internal_harmonic_mean": internal.get("harmonic_mean"),
                     "internal_responsiveness": internal.get("responsiveness_score"),
                     "internal_consistency": internal.get("consistency_score"),
-                    "external_wilson": external.get("wilson_score"),
+                    "external_ec": external.get("ec_score"),
+                    "external_coverage": external.get("coverage"),
+                    "external_non_refutation_rate": external.get("non_refutation_rate"),
                     "inter_session_stability": stability.get("inter_session", {}).get("score"),
                     "intra_session_stability": stability.get("intra_session", {}).get("score"),
                 }
@@ -246,7 +248,9 @@ def evaluate(result_path: str, eval_factors: List[str] = None, evaluator_model: 
             "internal_harmonic_mean": internal.get("harmonic_mean"),
             "internal_responsiveness": internal.get("responsiveness_score"),
             "internal_consistency": internal.get("consistency_score"),
-            "external_wilson": external.get("wilson_score"),
+            "external_ec": external.get("ec_score"),
+            "external_coverage": external.get("coverage"),
+            "external_non_refutation_rate": external.get("non_refutation_rate"),
             "inter_session_stability": stability.get("inter_session", {}).get("score"),
             "intra_session_stability": stability.get("intra_session", {}).get("score"),
         }

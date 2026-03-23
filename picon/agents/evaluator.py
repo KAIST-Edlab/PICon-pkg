@@ -1,7 +1,6 @@
 from typing import List, Dict, Any, Literal
 import re
 import time
-import math
 from pydantic import BaseModel, Field, ValidationError
 import logging
 import litellm
@@ -95,9 +94,9 @@ class EvaluatorAgent(Agent):
             },
             'external': {
                 'score': {
-                    "wilson_score": 0.0,
-                    "supported_count": 0,
-                    "total_claim_count": 0,
+                    "ec_score": 0.0,
+                    "coverage": 0.0,
+                    "non_refutation_rate": 0.0,
                 },
                 'not_confirmed': {
                     "count": 0,
@@ -735,39 +734,33 @@ class EvaluatorAgent(Agent):
                         self.results_dict['external']['claims'][label]['count'] += 1
                         self.results_dict['external']['claims'][label]['details'].append(detail)
 
-            # Calculate external scores
-            supported_count = self.results_dict['external']['claims']['supported']['count']
-            refuted_count = self.results_dict['external']['claims']['refuted']['count']
-            nei_count = self.results_dict['external']['claims']['nei']['count']
-            total_claim_count = supported_count + refuted_count + nei_count
-            
-            self._calculate_external_scores(supported_count, total_claim_count)
+            # Calculate external scores (coverage + non-refutation rate)
+            total_turns = len(non_repeat_turns)
+
+            # T_c: turns that had at least one entity-claim pair extracted and searched
+            turns_with_claims = set()
+            for item in external_eval_items:
+                turns_with_claims.add(item['turn_idx'])
+
+            # Build per-turn refuted/confirmed counts from fact verification results
+            turn_confirmed_counts = {}  # turn_idx -> total confirmed claims
+            turn_refuted_counts = {}    # turn_idx -> refuted claims
+            for detail in self.results_dict['external']['claims']['supported']['details']:
+                t = detail['turn_index']
+                turn_confirmed_counts[t] = turn_confirmed_counts.get(t, 0) + 1
+            for detail in self.results_dict['external']['claims']['refuted']['details']:
+                t = detail['turn_index']
+                turn_confirmed_counts[t] = turn_confirmed_counts.get(t, 0) + 1
+                turn_refuted_counts[t] = turn_refuted_counts.get(t, 0) + 1
+            for detail in self.results_dict['external']['claims']['nei']['details']:
+                t = detail['turn_index']
+                turn_confirmed_counts[t] = turn_confirmed_counts.get(t, 0) + 1
+
+            self._calculate_external_scores(total_turns, turns_with_claims, turn_confirmed_counts, turn_refuted_counts)
 
             # Save affirmed search results to final output
             self.results_dict['confirmed_search_results'] = self.affirmed_search_results
     
-    @staticmethod
-    def wilson_score_lower_bound(success_count: int, total_count: int, confidence: float = 0.95) -> float:
-        """Calculate Wilson Score Interval Lower Bound.
-        
-        :param success_count: Number of successes (e.g., supported claims)
-        :param total_count: Total number of trials (e.g., all claims)
-        :param confidence: Confidence level (default 95% -> z ~ 1.96)
-        :return: Lower bound score between 0.0 and 1.0
-        """
-        if total_count == 0:
-            return 0.0
-
-        z = 1.96  # z-score for 95% confidence
-        p_hat = success_count / total_count
-
-        numerator = p_hat + (z**2) / (2 * total_count) - z * math.sqrt(
-            (p_hat * (1 - p_hat)) / total_count + (z**2) / (4 * total_count**2)
-        )
-        denominator = 1 + (z**2) / total_count
-
-        return numerator / denominator
-
     def _calculate_internal_scores(self, responsive_ratio: float, internal_plausible_ratio: float):
         """Calculate and store internal consistency scores"""
         # Internal score: harmonic mean of plausible ratio and responsive ratio
@@ -779,13 +772,40 @@ class EvaluatorAgent(Agent):
         self.results_dict['internal']['score']['responsiveness_score'] = responsive_ratio
         self.results_dict['internal']['score']['consistency_score'] = internal_plausible_ratio
 
-    def _calculate_external_scores(self, supported_count: int, total_claim_count: int):
-        """Calculate and store external consistency scores"""
-        # External score: Wilson Score Lower Bound
-        external_score = self.wilson_score_lower_bound(supported_count, total_claim_count)
-        self.results_dict['external']['score']['wilson_score'] = external_score
-        self.results_dict['external']['score']['supported_count'] = supported_count
-        self.results_dict['external']['score']['total_claim_count'] = total_claim_count
+    def _calculate_external_scores(self, total_turns: int, turns_with_claims: set,
+                                   turn_confirmed_counts: dict, turn_refuted_counts: dict):
+        """Calculate external consistency: coverage, non-refutation rate, and their harmonic mean (EC).
+
+        Coverage = |T_c| / T  (fraction of turns with at least one searched claim)
+        Non-refutation rate = macro-average of per-turn (1 - refuted/confirmed)
+        EC = harmonic mean of coverage and non-refutation rate
+        """
+        # Coverage
+        coverage = len(turns_with_claims) / total_turns if total_turns > 0 else 0.0
+
+        # Non-refutation rate (macro-averaged over turns with confirmed claims)
+        # T_v: turns that have at least one confirmed claim (supported, refuted, or nei)
+        t_v = set(turn_confirmed_counts.keys())
+        if t_v:
+            per_turn_rates = []
+            for t in t_v:
+                n_ref = turn_refuted_counts.get(t, 0)
+                n_confirmed = turn_confirmed_counts[t]
+                p_t = 1.0 - (n_ref / n_confirmed) if n_confirmed > 0 else 1.0
+                per_turn_rates.append(p_t)
+            non_refutation_rate = sum(per_turn_rates) / len(per_turn_rates)
+        else:
+            non_refutation_rate = 0.0
+
+        # EC: harmonic mean
+        if non_refutation_rate + coverage > 0:
+            ec_score = 2 * non_refutation_rate * coverage / (non_refutation_rate + coverage)
+        else:
+            ec_score = 0.0
+
+        self.results_dict['external']['score']['ec_score'] = ec_score
+        self.results_dict['external']['score']['coverage'] = coverage
+        self.results_dict['external']['score']['non_refutation_rate'] = non_refutation_rate
     
     def intra_session_eval(self, history: List[Turn]):
         completion_kwargs_list = []
