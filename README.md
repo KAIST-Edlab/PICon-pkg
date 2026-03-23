@@ -45,7 +45,7 @@ import picon
 result = picon.run(
     persona="You are a 35-year-old software engineer named John...",
     name="John",
-    model="gemini/gemini-2.5-flash",   # LLM for the persona
+    model="gemini/gemini-3-flash",   # LLM for the persona
     num_turns=20,
     num_sessions=2,
     do_eval=True,
