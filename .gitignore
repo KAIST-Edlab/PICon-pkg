@@ -1,6 +1,9 @@
 .env
 *.log
 *.jsonl
+*.json
+*.pdf
+*.txt
 *.pyc
 *.html
 *.ipynb
