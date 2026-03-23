@@ -21,3 +21,4 @@ venv/
 prev_code/
 analysis/
 .ruff_cache/
+*.egg-info/

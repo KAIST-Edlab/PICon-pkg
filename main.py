@@ -18,11 +18,11 @@ Examples:
   # Wrapping server (CharacterAI, HumanSimulacra, etc.)
   python main.py --agent_api_base http://localhost:8001/v1 --agent_model characterai --agent_name "Mary Jones"
 """
-from src.utils import setup_logging, read_json, write_json, get_user_input_with_timeout, read_jsonl, get_completion
-from src.env.interrogation_env import InterrogationEnv
-from src.agents.agent_factory import get_agent
-from src.tools.web_search import SerperSearch, TavilySearch
-from src.tools.address_locator import GoogleGeocodeValidate
+from picon.utils import setup_logging, read_json, write_json, get_user_input_with_timeout, read_jsonl, get_completion
+from picon.env.interrogation_env import InterrogationEnv
+from picon.agents.agent_factory import get_agent
+from picon.tools.web_search import SerperSearch, TavilySearch
+from picon.tools.address_locator import GoogleGeocodeValidate
 from dotenv import load_dotenv
 import argparse
 import os
@@ -63,13 +63,13 @@ def parse_args():
     parser.add_argument('--question_seed', type=int, default=42)
     parser.add_argument('--log_to_file', action='store_true')
     # Prompt paths
-    parser.add_argument('--questioner_prompt_path', type=str, default='src/agents/prompts/questioner.txt')
-    parser.add_argument('--entity_extractor_prompt_path', type=str, default='src/agents/prompts/entity_extractor.txt')
-    parser.add_argument('--claim_extractor_prompt_path', type=str, default='src/agents/prompts/claim_extractor_prompt.txt')
-    parser.add_argument('--web_search_prompt_path', type=str, default='src/agents/prompts/websearch_prompt.txt')
-    parser.add_argument('--evaluator_prompt_path', type=str, default='src/agents/prompts/evaluator_prompt.txt')
+    parser.add_argument('--questioner_prompt_path', type=str, default='picon/agents/prompts/questioner.txt')
+    parser.add_argument('--entity_extractor_prompt_path', type=str, default='picon/agents/prompts/entity_extractor.txt')
+    parser.add_argument('--claim_extractor_prompt_path', type=str, default='picon/agents/prompts/claim_extractor_prompt.txt')
+    parser.add_argument('--web_search_prompt_path', type=str, default='picon/agents/prompts/websearch_prompt.txt')
+    parser.add_argument('--evaluator_prompt_path', type=str, default='picon/agents/prompts/evaluator_prompt.txt')
     parser.add_argument('--output_dir', type=str, default='data/results')
-    parser.add_argument('--question_file_path', type=str, default='src/env/wvs_orthogonal_questions.json')
+    parser.add_argument('--question_file_path', type=str, default='picon/env/wvs_orthogonal_questions.json')
     parser.add_argument('--eval_factors', type=str, nargs='+', default=None,
                         choices=['internal', 'external', 'intra', 'inter'])
     parser.add_argument('--do_eval', action='store_true')

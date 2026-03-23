@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "picon"
+version = "0.1.0"
+description = "Persona Interview & Consistency Evaluation Framework"
+requires-python = ">=3.10"
+dependencies = [
+    "litellm>=1.40",
+    "openai>=1.0",
+    "pydantic>=2.0",
+    "python-dotenv",
+    "beautifulsoup4",
+    "markdownify",
+    "pdfplumber",
+    "requests",
+    "rank-bm25",
+    "nest-asyncio",
+    "cloudscraper",
+]
+
+[project.optional-dependencies]
+web = ["fastapi", "uvicorn[standard]"]
+all = ["picon[web]", "pycharacterai", "google-genai", "PyGithub", "redis"]
+
+[tool.setuptools.packages.find]
+include = ["picon*"]
+
+[tool.setuptools.package-data]
+"picon.agents.prompts" = ["*.txt"]
+"picon.env" = ["*.json", "*.txt"]

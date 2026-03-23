@@ -17,7 +17,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.env.personas.human_simulacra.hs_agents import Top_agent
+from picon.env.personas.human_simulacra.hs_agents import Top_agent
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI()

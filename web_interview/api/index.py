@@ -20,10 +20,10 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.insert(0, project_root)
 
 from web_interview.web_interrogation_env import WebInterrogationEnv
-from src.agents.agent_factory import get_agent
-from src.tools.web_search import SerperSearch, TavilySearch
-from src.tools.address_locator import GoogleGeocodeValidate
-from src.utils import write_json, upload_to_github 
+from picon.agents.agent_factory import get_agent
+from picon.tools.web_search import SerperSearch, TavilySearch
+from picon.tools.address_locator import GoogleGeocodeValidate
+from picon.utils import write_json, upload_to_github 
 
 load_dotenv()
 

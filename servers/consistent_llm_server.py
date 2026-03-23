@@ -26,7 +26,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.utils import get_completion
+from picon.utils import get_completion
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI()

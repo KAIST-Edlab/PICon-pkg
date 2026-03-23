@@ -5,10 +5,10 @@ Replaces blocking input() with a state machine approach.
 import time
 import logging
 from typing import Dict, Any, List, Optional, Tuple
-from src.agents.base_agent import Agent
-from src.agents.agent_factory import get_agent
-from src.schemas import State, Action, Observation, Turn, ToolOutput, IntervieweeResponse
-from src.utils import read_json, get_completion
+from picon.agents.base_agent import Agent
+from picon.agents.agent_factory import get_agent
+from picon.schemas import State, Action, Observation, Turn, ToolOutput, IntervieweeResponse
+from picon.utils import read_json, get_completion
 from litellm.cost_calculator import completion_cost
 from concurrent.futures import ThreadPoolExecutor
 import random
