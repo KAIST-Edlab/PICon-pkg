@@ -22,8 +22,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-web = ["fastapi", "uvicorn[standard]"]
-all = ["picon[web]", "pycharacterai", "google-genai", "PyGithub", "redis"]
+all = ["pycharacterai", "google-genai", "PyGithub", "redis"]
 
 [tool.setuptools.packages.find]
 include = ["picon*"]

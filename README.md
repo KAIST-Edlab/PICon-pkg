@@ -12,10 +12,7 @@ PICON은 LLM 기반 페르소나의 **일관성(Consistency)**, **외부 검증 
 # 기본 설치
 pip install -e .
 
-# 웹 인터뷰 UI 포함
-pip install -e ".[web]"
-
-# 전체 (CharacterAI, Google GenAI 등)
+# 전체 (CharacterAI, Google GenAI 등 포함)
 pip install -e ".[all]"
 ```
 
@@ -27,13 +24,16 @@ pip install -e ".[all]"
 cp .env.example .env
 ```
 
-| 변수 | 용도 | 필수 |
-|------|------|:----:|
-| `GEMINI_API_KEY` | Gemini 모델 호출 (기본 인터뷰어/평가자) | O |
-| `OPENAI_API_KEY` | OpenAI 모델 사용 시 | - |
-| `SERPER_API_KEY` | 웹 검색 (외부 검증) | - |
-| `GOOGLE_GEOCODE` | 주소 검증 | - |
-| `GOOGLE_CLAIM_SEARCH` | 팩트체크 검색 | - |
+| 변수 | 용도 |
+|------|------|
+| `GEMINI_API_KEY` | Gemini 모델 호출 (기본 인터뷰어/평가자) |
+| `GOOGLE_API_KEY` | Google API (GEMINI_API_KEY와 동일 값) |
+| `OPENAI_API_KEY` | OpenAI 모델 호출 |
+| `ANTHROPIC_API_KEY` | Anthropic 모델 호출 |
+| `SERPER_API_KEY` | 웹 검색 (외부 검증) |
+| `GOOGLE_GEOCODE` | 주소 검증 (Google Geocoding API) |
+| `GOOGLE_CLAIM_SEARCH` | 팩트체크 검색 (Google Custom Search API) |
+| `GOOGLE_CX_ID` | Custom Search Engine ID |
 
 ---
 
