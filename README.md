@@ -98,29 +98,59 @@ cp .env.example .env
 
 ## Usage
 
-All baselines are evaluated through `main.py`. External services (CharacterAI, HumanSimulacra) require a wrapping server that exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
+All baselines are evaluated through `main.py`. Any system that exposes an OpenAI-compatible `/v1/chat/completions` endpoint can be evaluated.
 
-### 1. CharacterAI
+### Prompt-Based (LLM-Generated / DeepPersona / Twin-2K-500)
 
-Start the wrapping server first, then point `main.py` at it. No `--agent_persona` is needed because the persona lives on CharacterAI's side.
+The persona is defined entirely by a system prompt. Pass it as a string or a `.txt` file path via `--agent_persona`. Works with cloud APIs (routed via litellm) or self-hosted endpoints.
 
 ```bash
-# 1) Start the wrapping server
-python servers/characterai_server.py \
-    --port 8001 \
-    --character_id "ZTvEvhHRJs9KEe_NjwHoZEJFAAZ5nUV3UkTaMpNE7rY"
-
-# 2) Run the interview
+# Cloud API
 python main.py \
-    --agent_api_base http://localhost:8001/v1 \
-    --agent_model characterai \
-    --agent_name "Jordan Peterson" \
+    --agent_model gemini/gemini-2.5-flash \
+    --agent_persona persona.txt \
+    --agent_name "John" \
+    --num_turns 20 --num_sessions 2 --do_eval
+
+# Self-hosted vLLM endpoint
+python main.py \
+    --agent_api_base http://localhost:8000/v1 \
+    --agent_model meta-llama/Llama-3-8B \
+    --agent_persona "You are a 30-year-old teacher named Jane..." \
+    --agent_name "Jane" \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### 2. HumanSimulacra
+### Fine-Tuned Model (OpenCharacter / ConsistentLLM)
 
-Similar to CharacterAI — start the wrapping server with a character name from the bundled profiles (`picon/env/personas/human_simulacra/Characters/`).
+Requires a self-hosted model (e.g. vLLM) serving the fine-tuned weights. The persona is baked into the model or passed as a prompt depending on the method.
+
+```bash
+# OpenCharacter
+python main.py \
+    --agent_api_base http://localhost:8123/v1 \
+    --agent_model openai/willystumblr/opencharacter-sft-llama-3-8b-instruct \
+    --agent_persona "You are a kind-hearted librarian named Alice..." \
+    --agent_name "Alice" \
+    --num_turns 20 --num_sessions 2 --do_eval
+
+# ConsistentLLM — start the wrapping server first
+python servers/consistent_llm_server.py \
+    --port 8003 \
+    --model_path /path/to/llama-8b-sft-ppo-prompt \
+    --persona "You are a consistent persona..." \
+    --name "John"
+
+python main.py \
+    --agent_api_base http://localhost:8003/v1 \
+    --agent_model consistent_llm \
+    --agent_name "John" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+### RAG / Multi-Agent (HumanSimulacra)
+
+Uses a wrapping server that orchestrates retrieval-augmented generation over character memories and stories. Character profiles are bundled in `picon/env/personas/human_simulacra/Characters/`.
 
 ```bash
 # 1) Start the wrapping server
@@ -137,37 +167,41 @@ python main.py \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### 3. OpenCharacter
+### Service (CharacterAI)
 
-Requires a self-hosted model (e.g. vLLM) serving the OpenCharacter fine-tuned weights. The persona and character profile are passed together via `--agent_persona`.
+Wraps an external service API as an OpenAI-compatible endpoint. No `--agent_persona` needed — the persona is managed by the service.
 
 ```bash
+# 1) Start the wrapping server
+python servers/characterai_server.py \
+    --port 8001 \
+    --character_id "ZTvEvhHRJs9KEe_NjwHoZEJFAAZ5nUV3UkTaMpNE7rY"
+
+# 2) Run the interview
 python main.py \
-    --agent_api_base http://localhost:8123/v1 \
-    --agent_model openai/willystumblr/opencharacter-sft-llama-3-8b-instruct \
-    --agent_persona "You are a kind-hearted librarian named Alice..." \
-    --agent_name "Alice" \
+    --agent_api_base http://localhost:8001/v1 \
+    --agent_model characterai \
+    --agent_name "Jordan Peterson" \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### 4. LLM-Generated Persona
+### Custom Persona
 
-No wrapping server needed — uses cloud APIs (Gemini, GPT, etc.) or a self-hosted endpoint directly. Pass the persona as a string or a `.txt` file path.
+You can evaluate any persona agent as long as it speaks through an OpenAI-compatible endpoint. Write your own system prompt and point PICON at any model.
 
 ```bash
-# Cloud API (routed via litellm)
+# Option A: Cloud API with a custom prompt file
 python main.py \
-    --agent_model gemini/gemini-2.5-flash \
-    --agent_persona persona.txt \
-    --agent_name "John" \
+    --agent_model gpt-4o \
+    --agent_persona my_character.txt \
+    --agent_name "My Character" \
     --num_turns 20 --num_sessions 2 --do_eval
 
-# Self-hosted vLLM endpoint
+# Option B: Your own server (any framework that serves /v1/chat/completions)
 python main.py \
-    --agent_api_base http://localhost:8000/v1 \
-    --agent_model meta-llama/Llama-3-8B \
-    --agent_persona "You are a 30-year-old teacher named Jane..." \
-    --agent_name "Jane" \
+    --agent_api_base http://localhost:9000/v1 \
+    --agent_model my-custom-model \
+    --agent_name "My Agent" \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
