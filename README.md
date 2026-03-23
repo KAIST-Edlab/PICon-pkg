@@ -41,7 +41,6 @@ picon/                       # Core package
 
 main.py                      # CLI entry point
 servers/                     # Wrapping servers — expose CharacterAI, HumanSimulacra, etc. as OpenAI-compatible APIs
-analysis/                    # Post-interview analysis: contradiction detection, abstain classification, Streamlit dashboard
 web_interview/               # Web UI for collecting human interviews (Next.js frontend + FastAPI backend)
 scripts/                     # Batch run scripts
 ```
@@ -97,73 +96,7 @@ cp .env.example .env
 
 ---
 
-## Quick Start (Python API)
-
-```python
-import picon
-
-result = picon.run(
-    persona="You are a 35-year-old software engineer named John...",
-    name="John",
-    model="gemini/gemini-3-flash",   # LLM for the persona
-    num_turns=20,
-    num_sessions=2,
-    do_eval=True,
-)
-
-# Check results
-print(result.success)       # True / False
-print(result.eval_scores)   # Evaluation scores dict
-print(result.summary)       # Summary statistics
-
-# Save
-result.save("results/john.json")
-```
-
-### Interview Only (no evaluation)
-
-```python
-result = picon.interview(
-    persona="persona.txt",   # File path is also supported
-    name="Jane",
-    model="gemini/gemini-3-flash",
-)
-```
-
-### Evaluate Existing Results
-
-```python
-scores = picon.evaluate("results/john.json")
-print(scores)
-# {
-#   "internal_harmonic_mean": 0.85,
-#   "internal_responsiveness": 0.90,
-#   "internal_consistency": 0.81,
-#   "external_wilson": 0.72,
-#   "inter_session_stability": 0.88,
-#   "intra_session_stability": 0.91,
-# }
-```
-
----
-
-## Self-Hosted Model Evaluation
-
-For OpenAI-compatible endpoints (vLLM, etc.), specify `api_base`.
-
-```python
-result = picon.run(
-    persona="",                                    # Empty if the server manages the persona
-    name="Llama3",
-    model="meta-llama/Llama-3-8B",
-    api_base="http://localhost:8000/v1",
-    num_turns=30,
-)
-```
-
----
-
-## CLI Usage
+## Usage
 
 ```bash
 # Basic run
