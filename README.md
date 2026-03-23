@@ -66,7 +66,7 @@ result.save("results/john.json")
 result = picon.interview(
     persona="persona.txt",   # File path is also supported
     name="Jane",
-    model="gpt-4o",
+    model="gemini/gemini-3-flash",
 )
 ```
 
