@@ -98,28 +98,77 @@ cp .env.example .env
 
 ## Usage
 
+All baselines are evaluated through `main.py`. External services (CharacterAI, HumanSimulacra) require a wrapping server that exposes an OpenAI-compatible `/v1/chat/completions` endpoint.
+
+### 1. CharacterAI
+
+Start the wrapping server first, then point `main.py` at it. No `--agent_persona` is needed because the persona lives on CharacterAI's side.
+
 ```bash
-# Basic run
+# 1) Start the wrapping server
+python servers/characterai_server.py \
+    --port 8001 \
+    --character_id "ZTvEvhHRJs9KEe_NjwHoZEJFAAZ5nUV3UkTaMpNE7rY"
+
+# 2) Run the interview
+python main.py \
+    --agent_api_base http://localhost:8001/v1 \
+    --agent_model characterai \
+    --agent_name "Jordan Peterson" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+### 2. HumanSimulacra
+
+Similar to CharacterAI — start the wrapping server with a character name from the bundled profiles (`picon/env/personas/human_simulacra/Characters/`).
+
+```bash
+# 1) Start the wrapping server
+python servers/human_simulacra_server.py \
+    --port 8002 \
+    --character_name "Mary Jones" \
+    --model gemini/gemini-2.5-flash
+
+# 2) Run the interview
+python main.py \
+    --agent_api_base http://localhost:8002/v1 \
+    --agent_model human_simulacra \
+    --agent_name "Mary Jones" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+### 3. OpenCharacter
+
+Requires a self-hosted model (e.g. vLLM) serving the OpenCharacter fine-tuned weights. The persona and character profile are passed together via `--agent_persona`.
+
+```bash
+python main.py \
+    --agent_api_base http://localhost:8123/v1 \
+    --agent_model openai/willystumblr/opencharacter-sft-llama-3-8b-instruct \
+    --agent_persona "You are a kind-hearted librarian named Alice..." \
+    --agent_name "Alice" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+### 4. LLM-Generated Persona
+
+No wrapping server needed — uses cloud APIs (Gemini, GPT, etc.) or a self-hosted endpoint directly. Pass the persona as a string or a `.txt` file path.
+
+```bash
+# Cloud API (routed via litellm)
 python main.py \
     --agent_model gemini/gemini-2.5-flash \
     --agent_persona persona.txt \
     --agent_name "John" \
-    --num_turns 20 \
-    --num_sessions 2 \
-    --do_eval
+    --num_turns 20 --num_sessions 2 --do_eval
 
-# Self-hosted model
+# Self-hosted vLLM endpoint
 python main.py \
     --agent_api_base http://localhost:8000/v1 \
     --agent_model meta-llama/Llama-3-8B \
-    --agent_persona "You are a 30-year-old teacher..." \
-    --agent_name "Teacher"
-
-# Wrapping server (CharacterAI, etc.)
-python main.py \
-    --agent_api_base http://localhost:8001/v1 \
-    --agent_model characterai \
-    --agent_name "Mary Jones"
+    --agent_persona "You are a 30-year-old teacher named Jane..." \
+    --agent_name "Jane" \
+    --num_turns 20 --num_sessions 2 --do_eval
 ```
 
 ### CLI Options
