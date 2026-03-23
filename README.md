@@ -159,10 +159,10 @@ from picon.config import get_prompt_path
 
 # Build agents manually
 agents = {
-    "questioner": get_agent("questioner", "my_custom_questioner.txt", model="gpt-4o"),
-    "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt")),
-    "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt")),
-    "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt")),
+    "questioner": get_agent("questioner", "my_custom_questioner.txt", model="gpt-5"),
+    "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt"), model="gpt-5.1"),
+    "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model="gpt-5"),
+    "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model="gemini/gemini-2.5-flash"),
 }
 
 tools = {
