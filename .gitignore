@@ -22,3 +22,5 @@ prev_code/
 analysis/
 .ruff_cache/
 *.egg-info/
+CONSOLIDATION_PLAN.md
+PACKAGING_PLAN.md
