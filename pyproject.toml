@@ -21,6 +21,9 @@ dependencies = [
     "cloudscraper",
 ]
 
+[project.scripts]
+picon = "picon.__main__:main"
+
 [project.optional-dependencies]
 all = ["pycharacterai", "google-genai", "PyGithub", "redis"]
 

@@ -426,7 +426,7 @@ class GoogleClaimSearch(BaseModel):
         # Custom Search API costs
         # 100 queries per day are free
         # $5 per 1000 queries thereafter
-        free_quota = 100
+        free_quota = 2500
         cost_per_1000 = 5.0
         billable_calls = max(0, self.tool_call_counts - free_quota)
         total_cost = (billable_calls / 1000) * cost_per_1000
@@ -581,8 +581,12 @@ class SerperSearch(BaseModel):
 
     def calculate_cost(self) -> float:
         # Serper pricing: $50 per 2500 queries (~$0.02/query) after free tier
-        cost_per_query = 0.02
-        return self.tool_call_counts * cost_per_query
+        free_quota = 2500
+        cost_per_1000 = 1.0
+        billable_calls = max(0, self.tool_call_counts - free_quota)
+        total_cost = (billable_calls / 1000) * cost_per_1000
+        return total_cost
+        #return self.tool_call_counts * cost_per_query
 
 
 class TavilySearch(BaseModel):
