@@ -67,20 +67,37 @@ scripts/                     # Batch run scripts
 
 ## Installation
 
-```bash
-# Basic install
-pip install -e .
+### Option A — Clone the repo (development / full access)
 
-# Full install (CharacterAI, Google GenAI, etc.)
-pip install -e ".[all]"
+```bash
+git clone https://github.com/willystumblr/picon.git
+cd picon
+pip install -e .        # basic
+pip install -e ".[all]" # full (CharacterAI, Google GenAI, etc.)
+```
+
+### Option B — Install as a package (no repo needed)
+
+```bash
+pip install git+https://github.com/willystumblr/picon.git
+# full extras:
+pip install "picon[all] @ git+https://github.com/willystumblr/picon.git"
 ```
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in your API keys.
+**Option A:** copy the template and fill in your keys.
 
 ```bash
 cp .env.example .env
+```
+
+**Option B:** create a `.env` file manually (or export variables in your shell).
+
+```bash
+# .env
+OPENAI_API_KEY=sk-...
+SERPER_API_KEY=...
 ```
 
 | Variable | Purpose |
@@ -98,7 +115,7 @@ cp .env.example .env
 
 ## Usage
 
-PICON can be used as a **Python library** or via the **CLI** (`main.py`). Any system that exposes an OpenAI-compatible `/v1/chat/completions` endpoint can be evaluated.
+PICON can be used as a **Python library** or via the **CLI**. Any system that exposes an OpenAI-compatible `/v1/chat/completions` endpoint can be evaluated.
 
 ---
 
@@ -168,22 +185,28 @@ Default model values are defined in `picon/config.py` → `DEFAULT_CONFIG`.
 
 ---
 
-### CLI (`main.py`)
+### CLI
 
-`main.py` is a thin CLI wrapper around `picon.run_interview()` and `picon.run_evaluation()`.
+Three equivalent ways to invoke the CLI:
+
+```bash
+picon ...            # after pip install (Option A or B)
+python -m picon ...  # always works if picon package is installed
+python main.py ...   # only when repo is cloned (Option A)
+```
 
 #### Prompt-Based (LLM-Generated / DeepPersona / Twin-2K-500)
 
 ```bash
 # Cloud API
-python main.py \
+picon \
     --agent_model gpt-5 \
     --agent_persona persona.txt \
     --agent_name "John" \
     --num_turns 20 --num_sessions 2 --do_eval
 
 # Self-hosted vLLM endpoint
-python main.py \
+picon \
     --agent_api_base http://localhost:8000/v1 \
     --agent_model meta-llama/Llama-3-8B \
     --agent_persona "You are a 30-year-old teacher named Jane..." \
@@ -195,7 +218,7 @@ python main.py \
 
 ```bash
 # OpenCharacter
-python main.py \
+picon \
     --agent_api_base http://localhost:8123/v1 \
     --agent_model openai/willystumblr/opencharacter-sft-llama-3-8b-instruct \
     --agent_persona "You are a kind-hearted librarian named Alice..." \
@@ -209,7 +232,7 @@ python servers/consistent_llm_server.py \
     --persona "You are a consistent persona..." \
     --name "John"
 
-python main.py \
+picon \
     --agent_api_base http://localhost:8003/v1 \
     --agent_model consistent_llm \
     --agent_name "John" \
@@ -226,7 +249,7 @@ python servers/human_simulacra_server.py \
     --model gpt-5
 
 # 2) Run the interview
-python main.py \
+picon \
     --agent_api_base http://localhost:8002/v1 \
     --agent_model human_simulacra \
     --agent_name "Mary Jones" \
@@ -242,7 +265,7 @@ python servers/characterai_server.py \
     --character_id "ZTvEvhHRJs9KEe_NjwHoZEJFAAZ5nUV3UkTaMpNE7rY"
 
 # 2) Run the interview
-python main.py \
+picon \
     --agent_api_base http://localhost:8001/v1 \
     --agent_model characterai \
     --agent_name "Jordan Peterson" \
