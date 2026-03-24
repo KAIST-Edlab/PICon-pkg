@@ -6,6 +6,42 @@ Provide your own persona (system prompt), and PICON will interrogate it from mul
 
 ---
 
+## Quick Start
+
+```bash
+# 1. Install
+pip install git+https://github.com/willystumblr/picon.git
+
+# 2. Set API keys (minimum required)
+export OPENAI_API_KEY="sk-..."
+export GEMINI_API_KEY="..." 
+export SERPER_API_KEY="..."   # for external verification (serper.dev)
+
+# 3. Run
+picon --agent_model gemini/gemini-2.5-flash --agent_name "John" \
+      --agent_persona "You are a 35-year-old software engineer living in Seoul." \
+      --num_turns 5 --num_sessions 1 --do_eval
+```
+
+Or via Python:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+import picon
+
+result = picon.run_interview(
+    name="John",
+    model="gemini/gemini-2.5-flash",
+    persona="You are a 35-year-old software engineer living in Seoul.",
+    num_turns=5,
+    num_sessions=1,
+)
+print(result["persona_stats"])
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -121,9 +157,14 @@ PICON can be used as a **Python library** or via the **CLI**. Any system that ex
 
 ### Python API (recommended)
 
+Works with both Option A and B — just `pip install` and import.
+
 #### One-shot: interview + evaluation
 
 ```python
+from dotenv import load_dotenv
+load_dotenv()  # load API keys from .env
+
 import picon
 
 result = picon.run(
