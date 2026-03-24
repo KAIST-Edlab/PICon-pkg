@@ -95,7 +95,7 @@ def run(
     # Build agents
     agents = {
         "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model=cfg["questioner_model"]),
-        "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt"), model=cfg["extractor_model"]),
+        "extractor": get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model=cfg["extractor_model"]),
         "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model=cfg["web_search_model"]),
         "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model=cfg["evaluator_model"]),
     }
