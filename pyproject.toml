@@ -24,6 +24,9 @@ dependencies = [
 [project.optional-dependencies]
 all = ["pycharacterai", "google-genai", "PyGithub", "redis"]
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 include = ["picon*"]
 
