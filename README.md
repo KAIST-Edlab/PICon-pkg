@@ -1,4 +1,4 @@
-# PICON — Persona Interview & CONsistency Evaluation
+# PICON — Persona Interrogation framework for Consistency evaluation
 
 PICON is a framework that automatically interviews and evaluates LLM-based personas across three dimensions: **Consistency**, **External Verifiability**, and **Stability**.
 
