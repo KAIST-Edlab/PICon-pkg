@@ -32,7 +32,7 @@ class InterrogationEnv:
         self, 
         agents: Dict[str, Agent] = {},
         baseline_name: str = "characterai",
-        tools: List[Dict[str, Any]] = [],
+        tools: Dict[str, Any] = {},
         max_turns: int = 20,
         question_path: str = None,
         instruction_path: str = None,

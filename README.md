@@ -10,7 +10,7 @@ Provide your own persona (system prompt), and PICON will interrogate it from mul
 
 ```
 picon/                       # Core package
-├── __init__.py              #   Public API: run(), interview(), evaluate()
+├── __init__.py              #   Public API: run(), interview(), evaluate(), run_interview(), run_evaluation()
 ├── api.py                   #   Implements the public API functions above; defines PiconResult
 ├── config.py                #   Default settings (model names, turn counts) & prompt path helpers
 ├── schemas.py               #   Pydantic models for interview state (Turn, Action, State, etc.)
@@ -39,7 +39,7 @@ picon/                       # Core package
     ├── web_search.py        #     Web search (Serper, Tavily, Google) + page parsing & BM25 ranking
     └── address_locator.py   #     Address validation via Google Geocoding API
 
-main.py                      # CLI entry point
+main.py                      # CLI entry point (thin wrapper around picon.api)
 servers/                     # Wrapping servers — expose CharacterAI, HumanSimulacra, etc. as OpenAI-compatible APIs
 web_interview/               # Web UI for collecting human interviews (Next.js frontend + FastAPI backend)
 scripts/                     # Batch run scripts
@@ -85,7 +85,7 @@ cp .env.example .env
 
 | Variable | Purpose |
 |----------|---------|
-| `GEMINI_API_KEY` | Gemini model calls (default interviewer/evaluator) |
+| `GEMINI_API_KEY` | Gemini model calls |
 | `GOOGLE_API_KEY` | Google API (same value as `GEMINI_API_KEY`) |
 | `OPENAI_API_KEY` | OpenAI model calls |
 | `ANTHROPIC_API_KEY` | Anthropic model calls |
@@ -98,16 +98,86 @@ cp .env.example .env
 
 ## Usage
 
-All baselines are evaluated through `main.py`. Any system that exposes an OpenAI-compatible `/v1/chat/completions` endpoint can be evaluated.
+PICON can be used as a **Python library** or via the **CLI** (`main.py`). Any system that exposes an OpenAI-compatible `/v1/chat/completions` endpoint can be evaluated.
 
-### Prompt-Based (LLM-Generated / DeepPersona / Twin-2K-500)
+---
 
-The persona is defined entirely by a system prompt. Pass it as a string or a `.txt` file path via `--agent_persona`. Works with cloud APIs (routed via litellm) or self-hosted endpoints.
+### Python API (recommended)
+
+#### One-shot: interview + evaluation
+
+```python
+import picon
+
+result = picon.run(
+    persona="You are a 35-year-old software engineer living in Seoul...",
+    name="John",
+    model="gpt-5",
+    num_turns=20,
+    num_sessions=2,
+    do_eval=True,
+)
+print(result.eval_scores)
+result.save("results/john.json")
+```
+
+#### Separate interview and evaluation
+
+```python
+import picon
+
+# Step 1: interview
+interview_result = picon.run_interview(
+    name="John",
+    model="gpt-5",
+    persona="You are a 35-year-old software engineer...",
+    num_turns=20,
+    num_sessions=2,
+)
+
+# Step 2: evaluation (optional)
+persona_stats = picon.run_evaluation(interview_result, eval_factors=["internal", "external"])
+print(persona_stats)
+```
+
+#### `run_interview()` parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `name` | Interviewee name | (required) |
+| `model` | Model for the persona | (required) |
+| `persona` | System prompt (string or `.txt` path) | `""` |
+| `api_base` | OpenAI-compatible API URL | `None` (litellm routing) |
+| `api_key` | API key for the persona endpoint | `None` |
+| `num_turns` | Number of interview turns | `30` (from `DEFAULT_CONFIG`) |
+| `num_sessions` | Number of repeated sessions | `2` (from `DEFAULT_CONFIG`) |
+| `questioner_model` | Questioner agent model | `DEFAULT_CONFIG` |
+| `extractor_model` | Extractor agent model | `DEFAULT_CONFIG` |
+| `web_search_model` | Web search agent model | `DEFAULT_CONFIG` |
+| `evaluator_model` | Evaluator agent model | `DEFAULT_CONFIG` |
+| `nhd_model` | NHD detector model | `DEFAULT_CONFIG` |
+| `questioner_port` | Port for self-hosted questioner | `None` |
+| `extractor_port` | Port for self-hosted extractor | `None` |
+| `web_search_port` | Port for self-hosted web search | `None` |
+| `evaluator_port` | Port for self-hosted evaluator | `None` |
+| `nhd_port` | Port for self-hosted NHD | `None` |
+| `output_dir` | Output directory | `data/results` |
+| `question_seed` | Random seed for question order | `42` |
+
+Default model values are defined in `picon/config.py` → `DEFAULT_CONFIG`.
+
+---
+
+### CLI (`main.py`)
+
+`main.py` is a thin CLI wrapper around `picon.run_interview()` and `picon.run_evaluation()`.
+
+#### Prompt-Based (LLM-Generated / DeepPersona / Twin-2K-500)
 
 ```bash
 # Cloud API
 python main.py \
-    --agent_model gemini/gemini-2.5-flash \
+    --agent_model gpt-5 \
     --agent_persona persona.txt \
     --agent_name "John" \
     --num_turns 20 --num_sessions 2 --do_eval
@@ -121,9 +191,7 @@ python main.py \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### Fine-Tuned Model (OpenCharacter / ConsistentLLM)
-
-Requires a self-hosted model (e.g. vLLM) serving the fine-tuned weights. The persona is baked into the model or passed as a prompt depending on the method.
+#### Fine-Tuned Model (OpenCharacter / ConsistentLLM)
 
 ```bash
 # OpenCharacter
@@ -148,16 +216,14 @@ python main.py \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### RAG / Multi-Agent (HumanSimulacra)
-
-Uses a wrapping server that orchestrates retrieval-augmented generation over character memories and stories. Character profiles are bundled in `picon/env/personas/human_simulacra/Characters/`.
+#### RAG / Multi-Agent (HumanSimulacra)
 
 ```bash
 # 1) Start the wrapping server
 python servers/human_simulacra_server.py \
     --port 8002 \
     --character_name "Mary Jones" \
-    --model gemini/gemini-2.5-flash
+    --model gpt-5
 
 # 2) Run the interview
 python main.py \
@@ -167,9 +233,7 @@ python main.py \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### Service (CharacterAI)
-
-Wraps an external service API as an OpenAI-compatible endpoint. No `--agent_persona` needed — the persona is managed by the service.
+#### Service (CharacterAI)
 
 ```bash
 # 1) Start the wrapping server
@@ -185,27 +249,7 @@ python main.py \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-### Custom Persona
-
-You can evaluate any persona agent as long as it speaks through an OpenAI-compatible endpoint. Write your own system prompt and point PICON at any model.
-
-```bash
-# Option A: Cloud API with a custom prompt file
-python main.py \
-    --agent_model gpt-4o \
-    --agent_persona my_character.txt \
-    --agent_name "My Character" \
-    --num_turns 20 --num_sessions 2 --do_eval
-
-# Option B: Your own server (any framework that serves /v1/chat/completions)
-python main.py \
-    --agent_api_base http://localhost:9000/v1 \
-    --agent_model my-custom-model \
-    --agent_name "My Agent" \
-    --num_turns 20 --num_sessions 2 --do_eval
-```
-
-### CLI Options
+#### CLI Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -213,19 +257,17 @@ python main.py \
 | `--agent_persona` | System prompt (string or .txt path) | `None` |
 | `--agent_name` | Interviewee name | `Agent` |
 | `--agent_api_base` | OpenAI-compatible API URL | `None` (litellm routing) |
-| `--num_turns` | Number of interview turns | `30` |
-| `--num_sessions` | Number of repeated sessions | `2` |
-| `--do_eval` | Run evaluation | `False` |
-| `--eval_factors` | Select evaluation factors | `None` (all) |
-| `--questioner_model` | Questioner agent model | `gemini/gemini-2.5-flash` |
-| `--evaluator_model` | Evaluator agent model | `gemini/gemini-2.5-flash` |
-| `--output_dir` | Output directory | `data/results` |
+| `--num_turns` | Number of interview turns | `DEFAULT_CONFIG` |
+| `--num_sessions` | Number of repeated sessions | `DEFAULT_CONFIG` |
+| `--do_eval` | Run evaluation after interview | `False` |
+| `--eval_factors` | Evaluation factors to run | `None` (all) |
+| `--questioner_model` | Questioner agent model | `DEFAULT_CONFIG` |
+| `--evaluator_model` | Evaluator agent model | `DEFAULT_CONFIG` |
+| `--output_dir` | Output directory | `DEFAULT_CONFIG` |
 
 ---
 
 ## Advanced: Using Components Directly
-
-Import internal components to build custom pipelines.
 
 ```python
 from picon.agents import get_agent
@@ -233,16 +275,16 @@ from picon.env import InterrogationEnv
 from picon.tools import SerperSearch, GoogleGeocodeValidate
 from picon.config import get_prompt_path
 
-# Build agents manually
 agents = {
     "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model="gpt-5"),
-    "extractor": get_agent("claim_extractor", get_prompt_path("entity_extractor.txt"), model="gpt-5.1"),
+    "extractor":  get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model="gpt-5.1"),
     "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model="gpt-5"),
-    "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model="gemini/gemini-2.5-flash"),
+    "evaluator":  get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model="gpt-5"),
 }
 
 tools = {
     "serper_search": SerperSearch(api_key="your-key"),
+    "google_geocode_validate": GoogleGeocodeValidate(api_key="your-key"),
 }
 
 env = InterrogationEnv(
@@ -250,7 +292,7 @@ env = InterrogationEnv(
     tools=tools,
     max_turns=20,
     baseline_name="generic_agent",
-    model="gemini/gemini-3-flash",
+    model="gpt-5",
     persona="You are ...",
     name="CustomAgent",
 )
@@ -260,6 +302,8 @@ done = False
 while not done:
     state, done = env.step()
 env.finalize()
+eval_result = env.evaluate([env.state.history])
+env.shutdown()
 ```
 
 ---
