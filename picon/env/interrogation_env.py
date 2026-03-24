@@ -49,7 +49,7 @@ class InterrogationEnv:
             logging.warning("No agents provided. Initializing default agents.")
             agents = {
                 "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model=kwargs.get('questioner_model', DEFAULT_CONFIG["questioner_model"]), port=None),
-                "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"])) if kwargs.get('use_claim_extractor', True) else get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"]), port=None),
+                "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"])) if kwargs.get('use_claim_extractor', False) else get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"]), port=None),
                 "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model=kwargs.get('web_search_model', DEFAULT_CONFIG["web_search_model"]), port=None),
                 "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model=kwargs.get('evaluator_model', DEFAULT_CONFIG["evaluator_model"]), port=None),
             }
