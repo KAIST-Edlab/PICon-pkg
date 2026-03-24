@@ -17,7 +17,7 @@ class ClaimExtractorAgent(Agent):
         super().__init__(
             role=kwargs.get('role', "extractor"),
             system_message=kwargs.get('system_message', ""),
-            model=kwargs.get('model', "gemini/gemini-2.5-flash")
+            model=kwargs['model']
         )
     
     def act(self, message: str) -> Action:

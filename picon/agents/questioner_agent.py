@@ -16,7 +16,7 @@ class QuestionerAgent(Agent):
         super().__init__(
             role=kwargs.get('role', "questioner"),
             system_message=kwargs.get('system_message', ""),
-            model=kwargs.get('model', "gemini/gemini-2.5-flash"),
+            model=kwargs['model'],
             port=kwargs.get('port', None),
             host=kwargs.get('host', 'localhost')
         )

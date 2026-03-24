@@ -15,7 +15,7 @@ from picon.schemas import State, Action, Observation, Turn, ToolOutput
 from picon.tools.address_locator import GoogleGeocodeValidate
 from picon.tools.web_search import GoogleClaimSearch, SerperSearch
 from picon.utils import read_json, get_completion
-from picon.config import get_prompt_path, get_question_path
+from picon.config import get_prompt_path, get_question_path, DEFAULT_CONFIG
 from importlib import resources
 import logging
 from litellm.cost_calculator import completion_cost
@@ -48,10 +48,10 @@ class InterrogationEnv:
         if not agents:
             logging.warning("No agents provided. Initializing default agents.")
             agents = {
-                "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model='gemini/gemini-2.5-flash', port=None),
-                "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt")) if kwargs.get('use_claim_extractor', True) else get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model='gemini/gemini-2.5-flash', port=None),
-                "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model='gemini/gemini-2.5-flash', port=None),
-                "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model='gemini/gemini-2.5-flash', port=None),
+                "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model=kwargs.get('questioner_model', DEFAULT_CONFIG["questioner_model"]), port=None),
+                "extractor": get_agent("claim_extractor", get_prompt_path("claim_extractor_prompt.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"])) if kwargs.get('use_claim_extractor', True) else get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model=kwargs.get('extractor_model', DEFAULT_CONFIG["extractor_model"]), port=None),
+                "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model=kwargs.get('web_search_model', DEFAULT_CONFIG["web_search_model"]), port=None),
+                "evaluator": get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model=kwargs.get('evaluator_model', DEFAULT_CONFIG["evaluator_model"]), port=None),
             }
         self.agents = agents
         

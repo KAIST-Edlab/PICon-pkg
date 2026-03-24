@@ -12,11 +12,9 @@ class Agent(ABC):
         self.memory: List = [
             {"role": "system", "content": self.system_message}
         ]
-        if 'model' in kwargs:
-            self.model = kwargs['model']
-        else:
-            logging.warning("No model specified for the agent. Setting model to the default value: 'gemini/gemini-2.5-flash'.")
-            self.model = 'gemini/gemini-2.5-flash'
+        if 'model' not in kwargs:
+            raise ValueError("model must be specified for the agent.")
+        self.model = kwargs['model']
         self.host = kwargs.get('host', 'localhost')
         self.port = kwargs.get('port', None)
         self.cost = 0.0

@@ -17,7 +17,7 @@ class KGAgent(Agent):
         super().__init__(
             role=kwargs.get('role', "kg_agent"),
             system_message=kwargs.get('system_message', "Extract knowledge triplets from the given text."),
-            model=kwargs.get('model', "gemini/gemini-2.5-flash")
+            model=kwargs['model']
         )
         self.kg: List[Dict[str, Any]] = []  # to store extracted triplets
     

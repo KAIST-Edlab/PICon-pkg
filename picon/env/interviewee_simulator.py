@@ -26,7 +26,7 @@ class IntervieweeSimulator:
         self.name = kwargs.get('name', None)
 
         self.__nhd_prompt = open(get_prompt_path("nhd_detector.txt"), "r").read()
-        self.__nhd_model = kwargs.get('nhd_model', "gemini/gemini-2.5-flash")
+        self.__nhd_model = kwargs['nhd_model']
         self.__nhd_port = kwargs.get('nhd_port', None)
         if self.__nhd_model.startswith("hosted_vllm/"):
             assert self.__nhd_port is not None, "NHD port must be provided for hosted_vllm models"

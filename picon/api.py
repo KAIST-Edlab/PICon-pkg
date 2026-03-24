@@ -7,7 +7,7 @@ Usage:
     result = picon.run(
         persona="You are a 35-year-old software engineer...",
         name="John",
-        model="gemini/gemini-2.5-flash",
+        model="gpt-5",
     )
     print(result.summary)
     print(result.eval_scores)
@@ -48,7 +48,7 @@ class PiconResult:
 def run(
     persona: str,
     name: str = "Agent",
-    model: str = "gemini/gemini-2.5-flash",
+    model: str = None,
     api_base: str = None,
     api_key: str = None,
     num_turns: int = 30,
