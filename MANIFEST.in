@@ -1,0 +1,2 @@
+recursive-include picon/env *.json *.txt
+recursive-include picon/agents/prompts *.txt
