@@ -45,11 +45,11 @@ def parse_args():
     parser.add_argument('--agent_name', type=str, default='Agent',
                         help='Interviewee name (used in output file naming).')
     # Interrogation agent models
-    parser.add_argument('--questioner_model', type=str, default="gemini/gemini-2.5-flash")
-    parser.add_argument('--extractor_model', type=str, default="gemini/gemini-2.5-flash")
-    parser.add_argument('--web_search_model', type=str, default="gemini/gemini-2.5-flash")
+    parser.add_argument('--questioner_model', type=str, default="gpt-5")
+    parser.add_argument('--extractor_model', type=str, default="gpt-5.1")
+    parser.add_argument('--web_search_model', type=str, default="gpt-5")
     parser.add_argument('--evaluator_model', type=str, default="gemini/gemini-2.5-flash")
-    parser.add_argument('--nhd_model', type=str, default="gemini/gemini-2.5-flash")
+    parser.add_argument('--nhd_model', type=str, default="gpt-5-nano")
     # Port settings (for interrogation agents, not the evaluation target)
     parser.add_argument('--questioner_port', type=int, default=None)
     parser.add_argument('--extractor_port', type=int, default=None)
