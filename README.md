@@ -246,14 +246,6 @@ picon \
     --agent_name "John" \
     --num_turns 20 --num_sessions 2 --do_eval
 
-# Self-hosted vLLM endpoint
-picon \
-    --agent_api_base http://localhost:8000/v1 \
-    --agent_model meta-llama/Llama-3-8B \
-    --agent_persona "You are a 30-year-old teacher named Jane..." \
-    --agent_name "Jane" \
-    --num_turns 20 --num_sessions 2 --do_eval
-```
 
 #### Fine-Tuned Model (OpenCharacter / ConsistentLLM)
 
@@ -310,6 +302,16 @@ picon \
     --agent_api_base http://localhost:8001/v1 \
     --agent_model characterai \
     --agent_name "Jordan Peterson" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+
+#### Self-hosted vLLM endpoint
+```picon \
+    --agent_api_base http://localhost:8000/v1 \
+    --agent_model meta-llama/Llama-3-8B \
+    --agent_persona "You are a 30-year-old teacher named Jane..." \
+    --agent_name "Jane" \
     --num_turns 20 --num_sessions 2 --do_eval
 ```
 
