@@ -307,7 +307,8 @@ picon \
 
 
 #### Self-hosted vLLM endpoint
-```picon \
+```bash
+picon \
     --agent_api_base http://localhost:8000/v1 \
     --agent_model meta-llama/Llama-3-8B \
     --agent_persona "You are a 30-year-old teacher named Jane..." \
