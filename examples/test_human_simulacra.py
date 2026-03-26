@@ -25,6 +25,7 @@ import requests
 import argparse
 import logging
 import threading
+import json
 
 # ── Logging setup ───────────────────────────────────────────────────────────
 # Force root logger so picon's internal logs ([ACTION], [RESPONSE]) show in real-time

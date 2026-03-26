@@ -269,9 +269,6 @@ python servers/consistent_llm_server.py --port 8003 --model_path /path/to/model 
 picon --agent_api_base http://localhost:8003/v1 --agent_name "John" --do_eval
 ```
 
-<<<<<<< HEAD
-### CLI Options
-=======
 
 #### Self-hosted vLLM endpoint
 ```bash
@@ -284,7 +281,6 @@ picon \
 ```
 
 #### CLI Options
->>>>>>> ddf822b21418f04d443196dfd6de723db9f26494
 
 | Option | Description | Default |
 |--------|-------------|---------|
