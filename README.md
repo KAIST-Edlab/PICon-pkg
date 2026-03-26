@@ -252,14 +252,6 @@ picon \
     --agent_name "John" \
     --num_turns 20 --num_sessions 2 --do_eval
 
-# Self-hosted vLLM endpoint
-picon \
-    --agent_api_base http://localhost:8000/v1 \
-    --agent_model meta-llama/Llama-3-8B \
-    --agent_persona "You are a 30-year-old teacher named Jane..." \
-    --agent_name "Jane" \
-    --num_turns 20 --num_sessions 2 --do_eval
-```
 
 ### Wrapping Server Examples
 
@@ -277,7 +269,22 @@ python servers/consistent_llm_server.py --port 8003 --model_path /path/to/model 
 picon --agent_api_base http://localhost:8003/v1 --agent_name "John" --do_eval
 ```
 
+<<<<<<< HEAD
 ### CLI Options
+=======
+
+#### Self-hosted vLLM endpoint
+```bash
+picon \
+    --agent_api_base http://localhost:8000/v1 \
+    --agent_model meta-llama/Llama-3-8B \
+    --agent_persona "You are a 30-year-old teacher named Jane..." \
+    --agent_name "Jane" \
+    --num_turns 20 --num_sessions 2 --do_eval
+```
+
+#### CLI Options
+>>>>>>> ddf822b21418f04d443196dfd6de723db9f26494
 
 | Option | Description | Default |
 |--------|-------------|---------|

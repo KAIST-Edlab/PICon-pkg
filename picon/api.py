@@ -4,6 +4,13 @@ PICON high-level API.
 Usage:
     import picon
 
+    # Mode 1: External agent endpoint (no model needed)
+    result = picon.run(
+        api_base="http://localhost:8000/v1",
+        name="MyAgent",
+    )
+
+    # Mode 2: LLM + persona prompt
     result = picon.run(
         persona="You are a 35-year-old software engineer...",
         name="John",
@@ -64,8 +71,16 @@ def run(
     question_seed: int = 42,
     **kwargs,
 ) -> PiconResult:
-    """Run persona interview + evaluation in one call."""
+    """Run persona interview + evaluation in one call.
+
+    Two modes:
+      - External agent: provide api_base (model is optional, defaults to placeholder)
+      - LLM persona: provide model (and optionally persona, api_key)
+    """
     load_dotenv()
+
+    if not model and not api_base:
+        raise ValueError("Either 'model' or 'api_base' must be provided.")
 
     cfg = {**DEFAULT_CONFIG}
     if questioner_model:  cfg["questioner_model"] = questioner_model
@@ -203,8 +218,8 @@ def run(
 
 
 def run_interview(
-    name: str,
-    model: str,
+    name: str = "Agent",
+    model: str = None,
     persona: str = "",
     api_base: str = None,
     api_key: str = None,
@@ -231,9 +246,16 @@ def run_interview(
 ) -> dict:
     """Run interview sessions for a single persona.
 
+    Two modes:
+      - External agent: provide api_base (model is optional)
+      - LLM persona: provide model (and optionally persona, api_key)
+
     Returns a dict with keys: persona_stats, result_path, results_complete,
     histories, env.  Pass the return value to run_evaluation() for scoring.
     """
+    if not model and not api_base:
+        raise ValueError("Either 'model' or 'api_base' must be provided.")
+
     cfg = {**DEFAULT_CONFIG}
     if questioner_model:  cfg["questioner_model"] = questioner_model
     if extractor_model:   cfg["extractor_model"]  = extractor_model

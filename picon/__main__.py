@@ -2,18 +2,14 @@
 CLI entry point for PICON.
 
 Usage:
-  picon --agent_model gpt-5-nano --agent_name "John" --agent_persona "You are ..."
-  python -m picon --agent_model gpt-5-nano --agent_name "John" --agent_persona "You are ..."
+  # Mode 1: External agent endpoint (model optional)
+  picon --agent_api_base http://localhost:8000/v1 --agent_name "MyAgent" --do_eval
 
-Examples:
-  # Cloud API (litellm routing)
-  picon --agent_model gpt-5 --agent_persona persona.txt --agent_name John
+  # Mode 2: LLM + persona prompt
+  picon --agent_model gpt-5 --agent_persona "You are ..." --agent_name "John" --do_eval
 
-  # Self-hosted vLLM
+  # Mode 2 with self-hosted endpoint
   picon --agent_api_base http://localhost:8000/v1 --agent_model meta-llama/Llama-3-8B --agent_persona "You are ..."
-
-  # Wrapping server (CharacterAI, HumanSimulacra, etc.)
-  picon --agent_api_base http://localhost:8001/v1 --agent_model characterai --agent_name "Mary Jones"
 """
 from picon.utils import setup_logging, write_json
 from picon.api import run_interview, run_evaluation
@@ -31,8 +27,8 @@ def parse_args():
                         help='OpenAI-compatible API endpoint URL. If None, litellm routes by model name.')
     parser.add_argument('--agent_api_key', type=str, default=None,
                         help='API key for the agent endpoint (optional).')
-    parser.add_argument('--agent_model', type=str, required=True,
-                        help='Model name at the agent endpoint.')
+    parser.add_argument('--agent_model', type=str, default=None,
+                        help='Model name at the agent endpoint. Required unless --agent_api_base is provided.')
     parser.add_argument('--agent_persona', type=str, default=None,
                         help='System prompt / persona description. String or path to .txt file.')
     parser.add_argument('--agent_name', type=str, default='Agent',
@@ -73,7 +69,10 @@ def main():
     setup_logging(log_to_file=args.log_to_file, process_name="main")
     load_dotenv()
 
-    logging.info(f"Target: {args.agent_name} @ {args.agent_api_base or 'litellm'} / {args.agent_model}")
+    if not args.agent_model and not args.agent_api_base:
+        raise SystemExit("Error: Either --agent_model or --agent_api_base must be provided.")
+
+    logging.info(f"Target: {args.agent_name} @ {args.agent_api_base or 'litellm'} / {args.agent_model or '(default)'}")
 
     _skip = {"agent_api_base", "agent_api_key", "agent_model", "agent_name", "agent_persona",
              "do_eval", "eval_factors", "log_to_file"}
@@ -99,7 +98,7 @@ def main():
 
     summary = {
         "agent_name": args.agent_name,
-        "agent_model": args.agent_model,
+        "agent_model": args.agent_model or "(endpoint default)",
         "agent_api_base": args.agent_api_base,
         "run_timestamp": time.strftime('%Y-%m-%d_%H-%M-%S'),
         "config": {

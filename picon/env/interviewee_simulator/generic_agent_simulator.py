@@ -12,12 +12,15 @@ class GenericAgentSimulator(BaseIntervieweeSimulator):
     All evaluation targets — whether cloud LLM APIs, self-hosted vLLM, or custom
     wrapping servers — are accessed through the same /v1/chat/completions interface.
 
-    Required kwargs:
-        - model (str): Model name at the endpoint.
-        - persona (str): System prompt / persona description.
-                         Can be empty if the server manages persona internally (e.g., wrapping servers).
+    Two modes:
+        - External agent: provide api_base (model is optional, defaults to placeholder)
+        - LLM persona: provide model (and optionally persona, api_key)
+
+    At least one of model or api_base must be provided.
 
     Optional kwargs:
+        - model (str): Model name. Required when api_base is not set.
+        - persona (str): System prompt. Can be empty if the server manages persona internally.
         - api_base (str): API endpoint URL. None = litellm default routing.
         - api_key (str): API key. Defaults to "no-key".
         - name (str): Interviewee name. Defaults to "GenericAgent".
@@ -29,7 +32,6 @@ class GenericAgentSimulator(BaseIntervieweeSimulator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        assert 'model' in kwargs, "GenericAgentSimulator requires 'model'"
 
         self.name = kwargs.get('name', 'GenericAgent')
         self.user_message_template = kwargs.get('user_message_template', '{message}')
@@ -45,11 +47,18 @@ class GenericAgentSimulator(BaseIntervieweeSimulator):
 
         self.api_key = kwargs.get('api_key', 'no-key')
 
-        # When api_base is set and model has no provider prefix, add "openai/"
-        # so litellm routes to the OpenAI-compatible endpoint
-        model = kwargs['model']
-        if self.api_base and '/' not in model:
-            model = f"openai/{model}"
+        # Resolve model name:
+        # - If api_base is set without a model, use "openai/default" as placeholder
+        # - If api_base is set and model has no provider prefix, add "openai/"
+        # - If no api_base, model is required (litellm needs it for routing)
+        model = kwargs.get('model')
+        if self.api_base:
+            if not model:
+                model = "openai/default"
+            elif '/' not in model:
+                model = f"openai/{model}"
+        else:
+            assert model, "GenericAgentSimulator requires 'model' when 'api_base' is not provided"
         self.client_or_model = model
 
         # Initialize chat history
