@@ -1,6 +1,11 @@
 # PICON — Persona Interrogation framework for Consistency evaluation
 
-PICON is a framework that automatically interviews and evaluates LLM-based personas across three dimensions: **Consistency**, **External Verifiability**, and **Stability**.
+---
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/picon)
+![PyPI Version](https://img.shields.io/pypi/v/picon)
+---
+
+PICON is a multi-agent framework that automatically interviews and evaluates LLM-based persona agents across three dimensions: **Internal Consistency**, **External Verifiability**, and **Retest Stability**.
 
 ---
 
@@ -424,6 +429,15 @@ env.shutdown()
 
 ---
 
-## License
+## Citation
 
-TBD
+If you use PICON in your research, please cite:
+
+```bibtex
+@article{kim2026picon,
+  title={PICON: A Multi-Turn Interrogation Framework for Evaluating Persona Agent Consistency},
+  author={Kim, Minseo and Im, Sujeong and Choi, Junseong and Lee, Junhee and Shim, Chaeeun and Choi, Edward},
+  journal={arXiv preprint arXiv:2603.25620},
+  year={2026}
+}
+```
