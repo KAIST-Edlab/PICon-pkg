@@ -64,9 +64,11 @@ GEMINI_API_KEY="YOUR_GEMINI_KEY"
 # Web Search (required for external verification)
 SERPER_API_KEY="YOUR_SERPER_KEY"
 
+# Address validation (required for external verification)
+GOOGLE_GEOCODE="YOUR_GOOGLE_GEOCODE_KEY"
+
 # Optional
 ANTHROPIC_API_KEY="YOUR_ANTHROPIC_KEY"
-GOOGLE_GEOCODE="YOUR_GOOGLE_GEOCODE_KEY"       # Address validation
 GOOGLE_CLAIM_SEARCH="YOUR_GOOGLE_API_KEY"       # Fact-check search
 GOOGLE_CX_ID="YOUR_CUSTOM_SEARCH_ENGINE_ID"     # Custom Search Engine ID
 ```
