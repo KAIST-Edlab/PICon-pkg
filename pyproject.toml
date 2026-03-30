@@ -6,7 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "picon"
 version = "0.1.0"
 description = "Persona Interview & Consistency Evaluation Framework"
+readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+    {name = "PICON Team"},
+]
+keywords = ["llm", "persona", "evaluation", "interview", "consistency", "multi-agent"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "litellm>=1.40",
     "openai>=1.0",
@@ -26,6 +39,10 @@ picon = "picon.__main__:main"
 
 [project.optional-dependencies]
 all = ["pycharacterai", "google-genai", "PyGithub", "redis"]
+
+[project.urls]
+Homepage = "https://github.com/willystumblr/picon"
+Repository = "https://github.com/willystumblr/picon"
 
 [tool.setuptools]
 include-package-data = true

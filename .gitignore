@@ -15,10 +15,14 @@ logs/
 scripts/
 .venv/
 venv/
+paper/
 .gradio/
 prev_code/
 analysis/
 .ruff_cache/
 *.egg-info/
+dist/
+build/
 CONSOLIDATION_PLAN.md
 PACKAGING_PLAN.md
+USAGE_SCENARIOS.md
