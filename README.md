@@ -5,53 +5,133 @@
 ![PyPI Version](https://img.shields.io/pypi/v/picon)
 ---
 
-PICON is a multi-agent framework that automatically interviews and evaluates LLM-based persona agents across three dimensions: **Internal Consistency**, **External Verifiability**, and **Retest Stability**.
+An official Python package for evaluating LLM-based persona agents, called `PICON`.
+By running a multi-turn interview and fact-checking pipeline, you can measure how consistently and accurately a persona agent behaves.
+PICON evaluates persona agents across three dimensions:
+* **Internal Consistency**: freedom from self-contradiction across answers.
+* **External Consistency**: alignment of claims with real-world facts (via web search).
+* **Retest Stability**: consistency of answers when the same questions are repeated within and across sessions.
 
----
+&nbsp;
 
-## Quick Start
+### Recent updates
+* *March 2026 (v0.1.0)*: Initial release with interview pipeline, evaluation, and CLI.
+
+&nbsp;
+
+&nbsp;
+
+## Installation
 
 ```bash
-# 1. Install
-pip install git+https://github.com/willystumblr/picon.git
-
-# 2. Set API keys (minimum required)
-export OPENAI_API_KEY="sk-..."
-export GEMINI_API_KEY="..."
-export SERPER_API_KEY="..."   # for external verification (serper.dev)
+pip install picon-eval
 ```
-
-PICON supports two usage modes:
-
-### Mode 1: External Agent Endpoint
-
-You already have a persona agent running somewhere (e.g. a wrapping server, fine-tuned model, RAG agent). Just provide its endpoint URL — PICON will interview and evaluate it directly.
-
 ```python
 import picon
-
-result = picon.run(
-    api_base="http://localhost:8000/v1",
-    name="MyAgent",
-    num_turns=20,
-    num_sessions=2,
-    do_eval=True,
-)
-print(result.eval_scores)
-result.save("results/my_agent.json")
+print(picon.__version__)
 ```
+
+For development or full extras (CharacterAI, Google GenAI, etc.):
+```bash
+git clone https://github.com/willystumblr/picon.git
+cd picon
+pip install -e ".[all]"
+```
+
+&nbsp;
+
+&nbsp;
+
+## Quick Starts
+
+> [!NOTE]
+> Before using PICON, you must provide API keys either directly or in a `.env` file.
+> * *OpenAI models (gpt-\*)*: Set `OPENAI_API_KEY` in your `.env` file.
+> * *Gemini models (gemini/\*)*: Set `GEMINI_API_KEY` in your `.env` file.
+> * *Web search (external verification)*: Set `SERPER_API_KEY` in your `.env` file. Get one at [serper.dev](https://serper.dev).
+
+&nbsp;
+
+### Environment Variables
+
+Create a `.env` file in your working directory:
 
 ```bash
-picon --agent_api_base http://localhost:8000/v1 \
-      --agent_name "MyAgent" \
-      --num_turns 20 --num_sessions 2 --do_eval
+# LLM API Keys (at least one required)
+OPENAI_API_KEY="YOUR_OPENAI_KEY"
+GEMINI_API_KEY="YOUR_GEMINI_KEY"
+
+# Web Search (required for external verification)
+SERPER_API_KEY="YOUR_SERPER_KEY"
+
+# Address validation (required for external verification)
+GOOGLE_GEOCODE="YOUR_GOOGLE_GEOCODE_KEY"
+
+# Optional
+ANTHROPIC_API_KEY="YOUR_ANTHROPIC_KEY"
+GOOGLE_CLAIM_SEARCH="YOUR_GOOGLE_API_KEY"       # Fact-check search
+GOOGLE_CX_ID="YOUR_CUSTOM_SEARCH_ENGINE_ID"     # Custom Search Engine ID
 ```
 
-The endpoint must be OpenAI-compatible (`/v1/chat/completions`). No `model` parameter needed — the server handles everything internally.
+&nbsp;
 
-### Mode 2: LLM + Persona Prompt
+### Component-Based Usage
 
-Pick an LLM, give it a persona prompt, and PICON will build the interviewee from that.
+Import individual components and compose your own simulation pipeline:
+
+```python
+from picon import Questioner, EntityExtractor, Evaluator, Interviewee
+from picon import InterrogationSimulation
+
+# Set up agents
+questioner = Questioner(model="gpt-5")
+extractor = EntityExtractor(model="gpt-5.1")
+evaluator = Evaluator(model="gemini/gemini-2.5-flash")
+
+# Set up the persona to evaluate
+interviewee = Interviewee(
+    model="gpt-5",
+    persona="You are a 35-year-old software engineer living in Seoul.",
+    name="John",
+)
+
+# Run the full interview + evaluation pipeline
+sim = InterrogationSimulation(
+    interviewee=interviewee,
+    questioner=questioner,
+    extractor=extractor,
+    evaluator=evaluator,
+    num_turns=20,
+    num_sessions=2,
+)
+result = sim.run(do_eval=True)
+
+print(result.eval_scores)
+result.save("results/john.json")
+
+# Example output:
+# {
+#     "internal_harmonic_mean": 0.82,
+#     "external_ec": 0.75,
+#     "inter_session_stability": 0.68,
+#     "intra_session_stability": 0.91,
+# }
+```
+
+With default agent models, you can omit agent setup entirely:
+
+```python
+from picon import Interviewee, InterrogationSimulation
+
+interviewee = Interviewee(model="gpt-5", persona="You are ...", name="John")
+result = InterrogationSimulation(interviewee=interviewee, num_turns=20).run()
+```
+
+&nbsp;
+
+### Evaluate an LLM Persona (Simple API)
+
+For quick evaluations, use the `picon.run()` shortcut:
 
 ```python
 import picon
@@ -64,26 +144,55 @@ result = picon.run(
     num_sessions=2,
     do_eval=True,
 )
+
 print(result.eval_scores)
 result.save("results/john.json")
 ```
 
 ```bash
+# Equivalent CLI command
 picon --agent_model gpt-5 \
       --agent_persona "You are a 35-year-old software engineer living in Seoul." \
       --agent_name "John" \
       --num_turns 20 --num_sessions 2 --do_eval
 ```
 
-For self-hosted models (e.g. vLLM), provide both `api_base` and `model`:
+&nbsp;
+
+### Evaluate an External Agent Endpoint
+
+If you already have a persona agent running (e.g. a wrapping server, fine-tuned model, RAG agent), provide its OpenAI-compatible endpoint URL (`/v1/chat/completions`).
 
 ```python
-result = picon.run(
+from picon import Interviewee, InterrogationSimulation
+
+interviewee = Interviewee(api_base="http://localhost:8000/v1", name="MyAgent")
+result = InterrogationSimulation(interviewee=interviewee, num_turns=20).run()
+```
+
+```bash
+# Equivalent CLI command
+picon --agent_api_base http://localhost:8000/v1 \
+      --agent_name "MyAgent" \
+      --num_turns 20 --num_sessions 2 --do_eval
+```
+
+&nbsp;
+
+### Self-hosted Models (vLLM)
+
+For self-hosted models, provide both `api_base` and `model`:
+
+```python
+from picon import Interviewee, InterrogationSimulation
+
+interviewee = Interviewee(
     api_base="http://localhost:8000/v1",
     model="meta-llama/Llama-3-8B",
     persona="You are a 30-year-old teacher named Jane...",
     name="Jane",
 )
+result = InterrogationSimulation(interviewee=interviewee).run()
 ```
 
 ```bash
@@ -93,9 +202,38 @@ picon --agent_api_base http://localhost:8000/v1 \
       --agent_name "Jane" --do_eval
 ```
 
----
+&nbsp;
 
-## How It Works — Interview Pipeline
+### Separate Interview and Evaluation
+
+```python
+import picon
+
+# Step 1: Interview only
+interview_result = picon.run_interview(
+    name="John",
+    model="gpt-5",
+    persona="You are a 35-year-old software engineer...",
+    num_turns=20,
+    num_sessions=2,
+)
+
+# Step 2: Evaluate
+persona_stats = picon.run_evaluation(interview_result, eval_factors=["internal", "external"])
+print(persona_stats)
+```
+
+### Evaluate an Existing Result File
+
+```python
+scores = picon.evaluate("results/john.json", eval_factors=["internal", "external"])
+```
+
+&nbsp;
+
+&nbsp;
+
+## How It Works
 
 ```
 1. Get-to-Know        Ask predefined demographic questions (WVS dataset)
@@ -113,306 +251,62 @@ picon --agent_api_base http://localhost:8000/v1 \
 4. Finalize            Compute all evaluation scores and save results
 ```
 
----
-
-## Installation
-
-### Option A — Clone the repo (development / full access)
-
-```bash
-git clone https://github.com/willystumblr/picon.git
-cd picon
-pip install -e .        # basic
-pip install -e ".[all]" # full (CharacterAI, Google GenAI, etc.)
-```
-
-### Option B — Install as a package (no repo needed)
-
-```bash
-pip install git+https://github.com/willystumblr/picon.git
-# full extras:
-pip install "picon[all] @ git+https://github.com/willystumblr/picon.git"
-```
-
-## Environment Variables
-
-**Option A:** copy the template and fill in your keys.
-
-```bash
-cp .env.example .env
-```
-
-**Option B:** create a `.env` file manually (or export variables in your shell).
-
-```bash
-# .env
-OPENAI_API_KEY=sk-...
-SERPER_API_KEY=...
-```
-
-| Variable | Purpose |
-|----------|---------|
-| `GEMINI_API_KEY` | Gemini model calls |
-| `GOOGLE_API_KEY` | Google API (same value as `GEMINI_API_KEY`) |
-| `OPENAI_API_KEY` | OpenAI model calls |
-| `ANTHROPIC_API_KEY` | Anthropic model calls |
-| `SERPER_API_KEY` | Web search for external verification |
-| `GOOGLE_GEOCODE` | Address validation (Google Geocoding API) |
-| `GOOGLE_CLAIM_SEARCH` | Fact-check search (Google Custom Search API) |
-| `GOOGLE_CX_ID` | Custom Search Engine ID |
-
----
-
-## Python API
-
-### `picon.run()` — One-shot interview + evaluation
-
-```python
-import picon
-
-# External agent endpoint
-result = picon.run(api_base="http://localhost:8000/v1", name="MyAgent")
-
-# LLM + persona
-result = picon.run(model="gpt-5", persona="You are ...", name="John")
-
-print(result.eval_scores)
-result.save("results/john.json")
-```
-
-### `picon.run_interview()` + `picon.run_evaluation()` — Separate steps
-
-```python
-import picon
-
-# Step 1: interview
-interview_result = picon.run_interview(
-    name="John",
-    model="gpt-5",                   # or api_base="http://..."
-    persona="You are a 35-year-old software engineer...",
-    num_turns=20,
-    num_sessions=2,
-)
-
-# Step 2: evaluation
-persona_stats = picon.run_evaluation(interview_result, eval_factors=["internal", "external"])
-print(persona_stats)
-```
-
-### `picon.evaluate()` — Evaluate an existing result file
-
-```python
-scores = picon.evaluate("results/john.json", eval_factors=["internal", "external"])
-```
-
-### Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `name` | Interviewee name | `"Agent"` |
-| `model` | Model for the persona (required for Mode 2) | `None` |
-| `persona` | System prompt (string or `.txt` path) | `""` |
-| `api_base` | OpenAI-compatible API URL (required for Mode 1) | `None` |
-| `api_key` | API key for the persona endpoint | `None` |
-| `num_turns` | Number of interview turns | `30` |
-| `num_sessions` | Number of repeated sessions | `2` |
-| `do_eval` | Run evaluation after interview | `True` (in `run()`), `False` (in CLI) |
-| `eval_factors` | Evaluation factors to run | `None` (all) |
-| `questioner_model` | Questioner agent model | `DEFAULT_CONFIG` |
-| `extractor_model` | Extractor agent model | `DEFAULT_CONFIG` |
-| `evaluator_model` | Evaluator agent model | `DEFAULT_CONFIG` |
-| `output_dir` | Output directory | `data/results` |
-
-At least one of `model` or `api_base` must be provided.
-
----
-
-## CLI
-
-Three equivalent ways to invoke the CLI:
-
-```bash
-picon ...            # after pip install
-python -m picon ...  # always works if picon package is installed
-python main.py ...   # only when repo is cloned
-```
-
-### Mode 1: External Agent Endpoint
-
-```bash
-# Agent already running at http://localhost:8000/v1
-picon \
-    --agent_api_base http://localhost:8000/v1 \
-    --agent_name "MyAgent" \
-    --num_turns 20 --num_sessions 2 --do_eval
-```
-
-### Mode 2: LLM + Persona Prompt
-
-```bash
-# Cloud API
-picon \
-    --agent_model gpt-5 \
-    --agent_persona "You are a 35-year-old software engineer..." \
-    --agent_name "John" \
-    --num_turns 20 --num_sessions 2 --do_eval
-
-
-### Wrapping Server Examples
-
-```bash
-# CharacterAI — start the wrapping server first
-python servers/characterai_server.py --port 8001 --character_id "abc123"
-picon --agent_api_base http://localhost:8001/v1 --agent_name "Jordan Peterson" --do_eval
-
-# HumanSimulacra
-python servers/human_simulacra_server.py --port 8002 --character_name "Mary Jones" --model gpt-5
-picon --agent_api_base http://localhost:8002/v1 --agent_name "Mary Jones" --do_eval
-
-# ConsistentLLM
-python servers/consistent_llm_server.py --port 8003 --model_path /path/to/model --persona "..." --name "John"
-picon --agent_api_base http://localhost:8003/v1 --agent_name "John" --do_eval
-```
-
-
-#### Self-hosted vLLM endpoint
-```bash
-picon \
-    --agent_api_base http://localhost:8000/v1 \
-    --agent_model meta-llama/Llama-3-8B \
-    --agent_persona "You are a 30-year-old teacher named Jane..." \
-    --agent_name "Jane" \
-    --num_turns 20 --num_sessions 2 --do_eval
-```
-
-#### CLI Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--agent_model` | Model for the persona (required for Mode 2) | `None` |
-| `--agent_persona` | System prompt (string or .txt path) | `None` |
-| `--agent_name` | Interviewee name | `Agent` |
-| `--agent_api_base` | OpenAI-compatible API URL (required for Mode 1) | `None` |
-| `--agent_api_key` | API key for the persona endpoint | `None` |
-| `--num_turns` | Number of interview turns | `DEFAULT_CONFIG` |
-| `--num_sessions` | Number of repeated sessions | `DEFAULT_CONFIG` |
-| `--do_eval` | Run evaluation after interview | `False` |
-| `--eval_factors` | Evaluation factors: `internal`, `external`, `intra`, `inter` | `None` (all) |
-| `--questioner_model` | Questioner agent model | `DEFAULT_CONFIG` |
-| `--evaluator_model` | Evaluator agent model | `DEFAULT_CONFIG` |
-| `--output_dir` | Output directory | `DEFAULT_CONFIG` |
-
-At least one of `--agent_model` or `--agent_api_base` must be provided.
-
----
-
-## Project Structure
-
-```
-picon/                       # Core package
-├── __init__.py              #   Public API: run(), interview(), evaluate(), run_interview(), run_evaluation()
-├── api.py                   #   Implements the public API functions above; defines PiconResult
-├── config.py                #   Default settings (model names, turn counts) & prompt path helpers
-├── schemas.py               #   Pydantic models for interview state (Turn, Action, State, etc.)
-├── utils.py                 #   Shared helpers — LLM calls via litellm, JSON I/O
-│
-├── agents/                  #   AI agents that participate in the interview
-│   ├── agent_factory.py     #     Creates agent objects by type name (e.g. "questioner")
-│   ├── questioner_agent.py  #     Dynamically generates follow-up interview questions
-│   ├── extractor_agent.py   #     Extracts entities (people, places, facts) from answers
-│   ├── claim_agent.py       #     Extracts verifiable claims from answers
-│   ├── evaluator.py         #     Judges consistency/contradiction between repeated answers
-│   ├── web_search_agent.py  #     Decides whether to web-search a claim, then verifies it
-│   ├── kg_agent.py          #     Builds knowledge-graph triplets (subject, predicate, object)
-│   └── prompts/             #     System prompt files (.txt) for each agent
-│
-├── env/                     #   Interview environment — orchestrates the full interview flow
-│   ├── interrogation_env.py #     Core orchestrator: coordinates agents across turns
-│   ├── interviewee_simulator/
-│   │   ├── generic_agent_simulator.py  # Connects to any OpenAI-compatible LLM endpoint
-│   │   ├── simulator_factory.py        # Factory: creates the right simulator by baseline name
-│   │   └── persona_prompt_builders.py  # Converts various persona formats into system prompts
-│   ├── personas/            #     Bundled persona baselines (HumanSimulacra, PersonaHub)
-│   └── test_env/            #     Standalone test harnesses for individual agents
-│
-└── tools/                   #   External API integrations
-    ├── web_search.py        #     Web search (Serper, Tavily, Google) + page parsing & BM25 ranking
-    └── address_locator.py   #     Address validation via Google Geocoding API
-
-main.py                      # CLI entry point (thin wrapper around picon.api)
-servers/                     # Wrapping servers — expose CharacterAI, HumanSimulacra, etc. as OpenAI-compatible APIs
-web_interview/               # Web UI for collecting human interviews (Next.js frontend + FastAPI backend)
-scripts/                     # Batch run scripts
-```
-
----
-
-## Examples
-
-End-to-end scripts in [`examples/`](examples/) show how to spin up a persona server and run PICON against it with a single command.
-
-### OpenCharacter (vLLM + LoRA)
-
-Starts vLLM with an OpenCharacter LoRA adapter, wraps it with `template_server.py`, and runs `picon.run(api_base=...)`.
-
-```bash
-python examples/test_opencharacter_vllm.py
-```
-
-### HumanSimulacra (RAG agent)
-
-Starts `human_simulacra_server.py` and runs `picon.run(api_base=...)`.
-
-```bash
-# Default: Mary Jones + Gemini
-python examples/test_human_simulacra.py
-
-# Custom character / model
-python examples/test_human_simulacra.py --character "Kevin Kelly" --model "gpt-5"
-```
-
----
-
-## Advanced: Using Components Directly
-
-```python
-from picon.agents import get_agent
-from picon.env import InterrogationEnv
-from picon.tools import SerperSearch, GoogleGeocodeValidate
-from picon.config import get_prompt_path
-
-agents = {
-    "questioner": get_agent("questioner", get_prompt_path("questioner.txt"), model="gpt-5"),
-    "extractor":  get_agent("entity_extractor", get_prompt_path("entity_extractor.txt"), model="gpt-5.1"),
-    "web_search": get_agent("web_search", get_prompt_path("websearch_prompt.txt"), model="gpt-5"),
-    "evaluator":  get_agent("evaluator", get_prompt_path("evaluator_prompt.txt"), model="gpt-5"),
-}
-
-tools = {
-    "serper_search": SerperSearch(api_key="your-key"),
-    "google_geocode_validate": GoogleGeocodeValidate(api_key="your-key"),
-}
-
-env = InterrogationEnv(
-    agents=agents,
-    tools=tools,
-    max_turns=20,
-    baseline_name="generic_agent",
-    model="gpt-5",
-    persona="You are ...",
-    name="CustomAgent",
-)
-
-env.reset()
-done = False
-while not done:
-    state, done = env.step()
-env.finalize()
-eval_result = env.evaluate([env.state.history])
-env.shutdown()
-```
-
----
+&nbsp;
+
+&nbsp;
+
+## API Reference
+
+### Component Classes
+
+> `Interviewee(model, persona, name, api_base, api_key)`:
+> * `model` (str): LLM model name. Required if `api_base` is not provided.
+> * `persona` (str): System prompt or path to a `.txt` file. Default: `""`.
+> * `name` (str): Interviewee display name. Default: `"Agent"`.
+> * `api_base` (str): OpenAI-compatible endpoint URL. Required if `model` is not provided.
+> * `api_key` (str): API key for the endpoint. Default: `None`.
+
+> `Questioner(model, prompt_path)` / `EntityExtractor(model, prompt_path)` / `Evaluator(model, prompt_path)` / `WebSearch(model, prompt_path)`:
+> * `model` (str): LLM model name. Each agent has its own default (see below).
+> * `prompt_path` (str): Custom system prompt file. `None` uses the built-in prompt.
+
+> `InterrogationSimulation(interviewee, questioner, extractor, web_search, evaluator, ...)`:
+> * `interviewee` (Interviewee): The persona agent to evaluate. **Required.**
+> * `questioner` (Questioner): Questioner agent. `None` creates one with default model.
+> * `extractor` (EntityExtractor): Extractor agent. `None` creates one with default model.
+> * `web_search` (WebSearch): Web search agent. `None` creates one with default model.
+> * `evaluator` (Evaluator): Evaluator agent. `None` creates one with default model.
+> * `num_turns` (int): Interview turns per session. Default: `30`.
+> * `num_sessions` (int): Number of repeated sessions. Default: `2`.
+> * `nhd_model` (str): Model for AI detection. Default: `"gpt-5-nano"`.
+> * `output_dir` (str): Output directory. Default: `"data/results"`.
+> * `question_seed` (int): Random seed for question selection. Default: `42`.
+
+&nbsp;
+
+### Simple API
+
+> `picon.run()` / `picon.run_interview()` Parameters:
+> * `name` (str): Interviewee name. Default: `"Agent"`.
+> * `model` (str): LLM model name (e.g. `"gpt-5"`, `"gemini/gemini-2.5-flash"`). Required if `api_base` is not provided.
+> * `persona` (str): System prompt or path to a `.txt` file. Default: `""`.
+> * `api_base` (str): OpenAI-compatible API endpoint URL. Required if `model` is not provided.
+> * `api_key` (str): API key for the persona endpoint. Default: `None`.
+> * `num_turns` (int): Number of interview turns. Default: `30`.
+> * `num_sessions` (int): Number of repeated sessions. Default: `2`.
+> * `do_eval` (bool): Run evaluation after interview. Default: `True`.
+> * `eval_factors` (list): Evaluation factors to run: `"internal"`, `"external"`, `"intra"`, `"inter"`. Default: `None` (all).
+> * `questioner_model` (str): Model for the questioner agent. Default: `"gpt-5"`.
+> * `extractor_model` (str): Model for the entity extractor agent. Default: `"gpt-5.1"`.
+> * `web_search_model` (str): Model for the web search agent. Default: `"gpt-5"`.
+> * `evaluator_model` (str): Model for the evaluator agent. Default: `"gemini/gemini-2.5-flash"`.
+> * `nhd_model` (str): Model for AI detection. Default: `"gpt-5-nano"`.
+> * `output_dir` (str): Output directory for results. Default: `"data/results"`.
+> * `question_seed` (int): Random seed for question selection. Default: `42`.
+
+&nbsp;
+
+&nbsp;
 
 ## Evaluation Metrics
 
@@ -421,13 +315,32 @@ env.shutdown()
 | **Internal Responsiveness** | Relevance of answers to questions |
 | **Internal Consistency** | Consistency of answers to repeated questions |
 | **Internal Harmonic Mean** | Harmonic mean of Responsiveness and Consistency |
-| **External Coverage** | Fraction of turns containing at least one verifiable claim (`|T_c| / T`) |
-| **External Non-refutation Rate** | Macro-averaged per-turn rate of claims not refuted by web evidence |
+| **External Coverage** | Fraction of turns containing at least one verifiable claim |
+| **External Non-refutation Rate** | Per-turn rate of claims not refuted by web evidence |
 | **External Consistency (EC)** | Harmonic mean of Coverage and Non-refutation Rate |
 | **Inter-session Stability** | Answer stability across sessions |
 | **Intra-session Stability** | Answer stability within a session |
 
----
+&nbsp;
+
+&nbsp;
+
+## Examples
+
+End-to-end scripts in [`examples/`](examples/):
+
+```bash
+# OpenCharacter (vLLM + LoRA)
+python examples/test_opencharacter_vllm.py
+
+# HumanSimulacra (RAG agent)
+python examples/test_human_simulacra.py
+python examples/test_human_simulacra.py --character "Kevin Kelly" --model "gpt-5"
+```
+
+&nbsp;
+
+&nbsp;
 
 ## Citation
 
@@ -441,3 +354,5 @@ If you use PICON in your research, please cite:
   year={2026}
 }
 ```
+
+&nbsp;
