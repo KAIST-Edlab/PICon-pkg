@@ -233,6 +233,141 @@ scores = picon.evaluate("results/john.json", eval_factors=["internal", "external
 
 &nbsp;
 
+## Building a Custom API Endpoint
+
+If your persona agent uses custom logic (RAG, fine-tuned model, external API, etc.), you can wrap it as an **OpenAI-compatible endpoint** and evaluate it with PICON.
+Your server only needs to implement one endpoint: `POST /v1/chat/completions`.
+
+&nbsp;
+
+### Endpoint Specification
+
+**Request** — PICON sends a JSON body with a `messages` list:
+
+```json
+{
+  "messages": [
+    {"role": "system", "content": "..."},
+    {"role": "user", "content": "Hello, tell me about yourself."},
+    {"role": "assistant", "content": "I'm Alice, a librarian from Portland..."},
+    {"role": "user", "content": "What books do you enjoy?"}
+  ]
+}
+```
+
+**Response** — Your server must return an OpenAI-compatible JSON:
+
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "my-agent",
+  "choices": [{
+    "index": 0,
+    "message": {"role": "assistant", "content": "I love classic literature..."},
+    "finish_reason": "stop"
+  }],
+  "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+}
+```
+
+&nbsp;
+
+### Minimal Example
+
+A minimal custom endpoint using FastAPI:
+
+```python
+import time
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import uvicorn
+
+app = FastAPI()
+
+def generate_response(messages: list) -> str:
+    """Replace this with your own agent logic (RAG, API call, etc.)."""
+    user_message = messages[-1]["content"]
+    # ... your custom logic here ...
+    return "This is my response."
+
+@app.post("/v1/chat/completions")
+async def chat_completions(request: Request):
+    body = await request.json()
+    messages = body.get("messages", [])
+    if not messages:
+        return JSONResponse(status_code=400, content={"error": "No messages provided"})
+
+    content = generate_response(messages)
+
+    return {
+        "id": f"chatcmpl-{int(time.time())}",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": "my-agent",
+        "choices": [{
+            "index": 0,
+            "message": {"role": "assistant", "content": content},
+            "finish_reason": "stop",
+        }],
+        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+    }
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+```
+
+Start the server, then point PICON at it:
+
+```python
+import picon
+
+result = picon.run(
+    api_base="http://localhost:8001/v1",
+    name="MyAgent",
+    num_turns=20,
+    do_eval=True,
+)
+```
+
+```bash
+picon --agent_api_base http://localhost:8001/v1 \
+      --agent_name "MyAgent" \
+      --num_turns 20 --do_eval
+```
+
+&nbsp;
+
+### Using the Built-in Template Server
+
+For agents backed by a vLLM or other OpenAI-compatible LLM service, the included [`servers/template_server.py`](servers/template_server.py) handles persona injection automatically:
+
+```bash
+# 1) Start your LLM backend (e.g. vLLM)
+vllm serve meta-llama/Meta-Llama-3-8B-Instruct \
+    --served-model-name my-model --port 8000
+
+# 2) Start the wrapping server (persona is baked in)
+python servers/template_server.py \
+    --port 8001 \
+    --vllm_base http://localhost:8000/v1 \
+    --vllm_model my-model \
+    --persona "You are Alice, a 32-year-old librarian from Portland..." \
+    --name "Alice"
+
+# 3) Evaluate with PICON
+picon --agent_api_base http://localhost:8001/v1 --agent_name "Alice" --do_eval
+```
+
+The template server replaces the system prompt in incoming requests with the baked-in persona, so PICON only needs the endpoint URL. The `--persona` flag accepts either a string or a path to a `.txt` file.
+
+See [`examples/`](examples/) for full end-to-end scripts using the template server with vLLM + LoRA and HumanSimulacra RAG.
+
+&nbsp;
+
+&nbsp;
+
 ## How It Works
 
 ```
