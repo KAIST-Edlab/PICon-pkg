@@ -453,7 +453,7 @@ class EvaluatorAgent(Agent):
         non_repeat_turns = [turn for turn in history if turn.type != 'repeat']
 
         if not non_repeat_turns:
-            return  # nothing to evaluate
+            raise ValueError("Evaluation failed: no non-repeat turns found in history. Interview data may be empty or corrupted.")
 
         # Reset affirmed search results
         self.affirmed_search_results = []
@@ -538,7 +538,7 @@ class EvaluatorAgent(Agent):
                     qa_history += f"Q: {conf_question}\nA: {conf_response}\n\n"
 
         if not eval_items:
-            return  # nothing to evaluate
+            raise ValueError("Evaluation failed: no evaluable QA pairs found in history. Interview responses may be missing or malformed.")
 
         # ============================================================
         # INTERNAL EVALUATION PART (Uncooperative & Internal Consistency)

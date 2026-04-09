@@ -443,8 +443,8 @@ def run_evaluation(interview_result: dict, eval_factors: List[str] = None) -> di
             persona_stats["eval_stability_intra_session"] = stability.get("intra_session", {}).get("score")
 
     except Exception as e:
-        logging.exception(f"Evaluation failed for {persona_stats['name']}: {e}")
-        persona_stats["eval_stability_inter_session"] = 0.0
+        env.shutdown()
+        raise
     finally:
         env.shutdown()
 
