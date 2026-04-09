@@ -402,24 +402,10 @@ def run_interview(
             "env": env,
         }
 
-    except ValueError as e:
-        if "AI Detected" in str(e):
-            persona_stats["ai_detected"] = True
-            persona_stats["error_type"] = "AI Detected"
-            persona_stats["eval_stability_inter_session"] = 0.0
-        else:
-            persona_stats["error_type"] = str(e)
-        if "env" in locals():
-            env.shutdown()
-        return {"persona_stats": persona_stats, "result_path": None, "results_complete": None, "histories": None, "env": None}
-
     except Exception as e:
-        persona_stats["error_type"] = str(e)
-        persona_stats["eval_stability_inter_session"] = 0.0
-        logging.exception(f"Error for persona {name}: {e}")
         if "env" in locals():
             env.shutdown()
-        return {"persona_stats": persona_stats, "result_path": None, "results_complete": None, "histories": None, "env": None}
+        raise
 
 
 def run_evaluation(interview_result: dict, eval_factors: List[str] = None) -> dict:

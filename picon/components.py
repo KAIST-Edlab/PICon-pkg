@@ -318,18 +318,7 @@ class InterrogationSimulation:
             picon_result.result_path = result_path
             return picon_result
 
-        except ValueError as e:
-            if "AI Detected" in str(e):
-                picon_result.ai_detected = True
-            logging.warning(f"Interview stopped: {e}")
-            if "env" in locals():
-                env.shutdown()
-            picon_result.summary = persona_stats
-            return picon_result
-
         except Exception as e:
-            logging.exception(f"Error during interview: {e}")
             if "env" in locals():
                 env.shutdown()
-            picon_result.summary = persona_stats
-            return picon_result
+            raise
