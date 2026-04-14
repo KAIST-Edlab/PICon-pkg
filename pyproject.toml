@@ -32,6 +32,9 @@ dependencies = [
     "rank-bm25",
     "nest-asyncio",
     "cloudscraper",
+    "boto3",                       
+    "google-cloud-aiplatform",     
+    "anthropic[vertex]",           
 ]
 
 [project.scripts]
